@@ -15,3 +15,5 @@ Security camera display for cameras supporting ONVIF:
 ![image](https://github.com/dividebysandwich/pyHomeAlarmKeypad/assets/23048489/673f2ce2-3cd8-47b7-85a7-0c9a074b2822)
 
 
+This project contains custom touchscreen handling that fixes many touchscreens in framebuffer mode. Check out handleTouchscreen() if you want to learn more, and if your pygame touchscreen project only works in X11 but you get weird touch coordinates in framebuffer mode.
+
