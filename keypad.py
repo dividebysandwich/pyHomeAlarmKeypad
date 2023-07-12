@@ -64,10 +64,13 @@ mapBackground = False
 lastMapLoadAttempt = 0
 
 class mapImage:
-    def __init__(self, image, timestamp, dt):
+    def __init__(self, image, timestamp, renderTimestamp):
         self.image = image
         self.timestamp = timestamp
-        self.dt = dt
+        self.renderTimestamp = renderTimestamp
+    
+def sortByTimestamp(element):
+    return int(element.timestamp)
 
 def serve_forever(httpd):
     with httpd:
@@ -641,36 +644,44 @@ def renderMap(window, frame):
             if (imageIsLoaded == False):
                 print("Image " + timestamp + " loading...")
                 url = "https://api.meteoradar.co.uk/image/1.0/?time=" + timestamp + "&type=radareuropabliksem#f"
-                r = requests.get(url);
-                try: 
-                    image = pygame.image.load(io.BytesIO(r.content)).convert_alpha()
-                    mapImages.append(mapImage(image, timestamp, dt))
-                except:
-                    print("Error loading animation frame")
+                renderTimestamp = dt.astimezone(localTimezone).strftime("%H:%M")
+                daemon = Thread(target=getMapFrame, args=(url,timestamp,renderTimestamp), daemon=True, name=timestamp)
+                daemon.start()
+#                getMapFrame(url, timestamp, renderTimestamp);
+
                 print("Done!")
       
-        # If we loaded more than 12 images, delete the oldest one
-        while len (mapImages) > 12:
-            mapImages.pop(0)
         
+    mapImages.sort(key=sortByTimestamp)
+    # If we loaded more than 12 images, delete the oldest one
+    while len (mapImages) > 12:
+        mapImages.pop(0)
     window.blit(mapBackground, (50, 60), cropWindow)
     actualFrame = frame
     if (actualFrame > 11):
         actualFrame = 11
     try: 
         window.blit(mapImages[actualFrame].image, (50, 60), cropWindow)
-        timestamp = mapImages[actualFrame].dt.astimezone(localTimezone).strftime("%H:%M")
 
         rect = pygame.Surface((218,58), pygame.SRCALPHA, 32)
         rect.fill((0,0,0,220))
         window.blit(rect, (515,75))
 
-        et = mediumFont.render(timestamp, True, (0, 0, 0))
+        et = mediumFont.render(mapImages[actualFrame].renderTimestamp, True, (0, 0, 0))
         window.blit(et, (522, 70))
-        et = mediumFont.render(timestamp, True, (255, 255, 255))
+        et = mediumFont.render(mapImages[actualFrame].renderTimestamp, True, (255, 255, 255))
         window.blit(et, (520, 68))
     except:
         print("Error rendering animation frame")
+
+def getMapFrame(url: str, timestamp: str, renderTimestamp: str):
+    global mapImages
+    r = requests.get(url)
+    try: 
+        image = pygame.image.load(io.BytesIO(r.content)).convert_alpha()
+        mapImages.append(mapImage(image, timestamp, renderTimestamp))
+    except:
+        print("Error loading animation frame")
 
 def displayWeather(window):
     global lastCustomEvent, useCustomTouchscreenHandling, videoFeed, buttonSound, loadStreamOnStart, windReloadTime, useLocalStation
@@ -702,7 +713,7 @@ def displayWeather(window):
 
         clock.tick(2)
         
-        if (currentTime - startTime >= 10):
+        if ((displayMap == True and currentTime - startTime >= 10) or (displayMap == False and currentTime - startTime >= 5)):
             displayMap = not displayMap
             startTime = currentTime
             mapFrame = 0
