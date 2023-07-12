@@ -19,9 +19,9 @@ useX11 = False # Set to true to force X11 graphics
 hideMouseCursor = False # Set to true for touchscreens
 fixedSizeWindow = True # Set to true if you run in a window manager and want to force the window size. Use False if you use framebuffer
 
-firstFloorMode = False
-weatherOnlyMode = False
-useLocalStation = False
+firstFloorMode = False # Set to true if you want special handling for arming/disarming the alarm system
+weatherOnlyMode = False # Set to true if you ONLY want the weather page to be displayed
+useLocalStation = False # Set to true if you want to directly fetch data from a local EcoWitt weather station
 
 touchDebug = False
 loadStreamOnStart = False
@@ -150,7 +150,7 @@ def getHistograms():
         r = requests.get(energyServerAddress + '/status/lastbattuse.txt');
         hist_battuse = r.text.split('\n')
     except Exception as err:
-        print(f'Error occured: {err}')
+        print(f'Error in Histograms: {err}')
 
 def getWeather():
     global weatherData, weatherServerAddress
@@ -158,7 +158,7 @@ def getWeather():
         r = requests.get(weatherServerAddress);
         weatherData = json.loads(r.text)
     except Exception as err:
-        print(f'Error occured: {err}')
+        print(f'Error in weather data: {err}')
 
 def getLocalWeather():
     global localWeatherData, localWeatherStationAddress
@@ -166,8 +166,9 @@ def getLocalWeather():
 #        print("Query local weather")
         r = requests.get(localWeatherStationAddress);
         localData = json.loads(r.text)
+#        print(r.text)
         localWeatherData = {}
-        for data in localData:
+        for data in localData["common_list"]:
             if (data["id"] == "0x02"):
                 localWeatherData["curtemperature"] = float(data["val"])
             if (data["id"] == "0x0B"):
@@ -177,7 +178,7 @@ def getLocalWeather():
             if (data["id"] == "0x0A"):
                 localWeatherData["curwinddir"] = int(data["val"])
     except Exception as err:
-        print(f'Error occured: {err}')
+        print(f'Error in local weather data: {err}')
 
 
 def handleTouchscreen():
@@ -659,6 +660,13 @@ def renderMap(window, frame):
     try: 
         window.blit(mapImages[actualFrame].image, (50, 60), cropWindow)
         timestamp = mapImages[actualFrame].dt.astimezone(localTimezone).strftime("%H:%M")
+
+        rect = pygame.Surface((218,58), pygame.SRCALPHA, 32)
+        rect.fill((0,0,0,220))
+        window.blit(rect, (515,75))
+
+        et = mediumFont.render(timestamp, True, (0, 0, 0))
+        window.blit(et, (522, 70))
         et = mediumFont.render(timestamp, True, (255, 255, 255))
         window.blit(et, (520, 68))
     except:
@@ -726,11 +734,11 @@ def displayWeather(window):
         windDirection = weatherData["curwinddir"]
         windGust = weatherData["curwindgust"]
         temperature = weatherData["curtemperature"]
-        if (useLocalStation == True):
+        if (useLocalStation == True and localWeatherData != False):
             windSpeed = localWeatherData["curwindspeed"]
             windDirection = localWeatherData["curwinddir"]
             windGust = localWeatherData["curwindgust"]
-            temperatuer = localWeatherData["curtemperature"]
+            temperature = localWeatherData["curtemperature"]
 
         drawWindrose(window, windDirection, windSpeed, 800, 50)
         windcolor = "red"
@@ -738,14 +746,14 @@ def displayWeather(window):
             windcolor = "green"
         elif windSpeed < 30:
             windcolor = "yellow"
-        et = mediumFont.render(str(windSpeed) + " km/h", True, getDrawColor(windcolor))
+        et = mediumFont.render(f'{windSpeed:.1f}' + " km/h", True, getDrawColor(windcolor))
         window.blit(et, (900, 580))
 
         if (windGust > windSpeed + 10.0):
-            et = smallFont.render(str(windGust) + " km/h Böen", True, getDrawColor(windcolor))
+            et = smallFont.render(f'{windGust:.1f}' + " km/h Böen", True, getDrawColor(windcolor))
             window.blit(et, (900, 645))
 
-        et = mediumFont.render(str(temperature) + "°C", True, getDrawColor("white"))
+        et = mediumFont.render(f'{temperature:.1f}' + "°C", True, getDrawColor("white"))
         window.blit(et, (900, 680))
         pygame.display.flip()
         event_list = pygame.event.get()
