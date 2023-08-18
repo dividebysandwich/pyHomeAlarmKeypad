@@ -751,17 +751,17 @@ def displayWeather(window):
             windGust = localWeatherData["curwindgust"]
             temperature = localWeatherData["curtemperature"]
 
-        drawWindrose(window, windDirection, windSpeed, 800, 50)
+        drawWindrose(window, windDirection, windGust, 800, 50)
         windcolor = "red"
-        if windSpeed < 20:
+        if windGust < 20:
             windcolor = "green"
-        elif windSpeed < 30:
+        elif windGust < 30:
             windcolor = "yellow"
-        et = mediumFont.render(f'{windSpeed:.1f}' + " km/h", True, getDrawColor(windcolor))
+        et = mediumFont.render(f'{windGust:.1f}' + " km/h", True, getDrawColor(windcolor))
         window.blit(et, (900, 580))
 
         if (windGust > windSpeed + 10.0):
-            et = smallFont.render(f'{windGust:.1f}' + " km/h Böen", True, getDrawColor(windcolor))
+            et = smallFont.render(f'{windSpeed:.1f}' + " km/h Minimum", True, getDrawColor(windcolor))
             window.blit(et, (900, 645))
 
         et = mediumFont.render(f'{temperature:.1f}' + "°C", True, getDrawColor("white"))
