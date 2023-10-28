@@ -62,6 +62,7 @@ forceSwitchVideo = False
 mapImages = []
 mapBackground = False
 lastMapLoadAttempt = 0
+localWeatherData = {}
 
 class mapImage:
     def __init__(self, image, timestamp, renderTimestamp):
@@ -163,6 +164,13 @@ def getWeather():
     except Exception as err:
         print(f'Error in weather data: {err}')
 
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
+
 def getLocalWeather():
     global localWeatherData, localWeatherStationAddress
     try:
@@ -170,18 +178,19 @@ def getLocalWeather():
         r = requests.get(localWeatherStationAddress);
         localData = json.loads(r.text)
 #        print(r.text)
-        localWeatherData = {}
+#        localWeatherData = {}
         for data in localData["common_list"]:
-            if (data["id"] == "0x02"):
+            if (data["id"] == "0x02" and isfloat(data["val"])):
                 localWeatherData["curtemperature"] = float(data["val"])
-            if (data["id"] == "0x0B"):
+            if (data["id"] == "0x0B" and isfloat(data["val"].split()[0])):
                 localWeatherData["curwindspeed"] = float(data["val"].split()[0])
-            if (data["id"] == "0x0C"):
+            if (data["id"] == "0x0C" and isfloat(data["val"].split()[0])):
                 localWeatherData["curwindgust"] = float(data["val"].split()[0])
-            if (data["id"] == "0x0A"):
+            if (data["id"] == "0x0A" and isfloat(data["val"])):
                 localWeatherData["curwinddir"] = int(data["val"])
     except Exception as err:
         print(f'Error in local weather data: {err}')
+
 
 
 def handleTouchscreen():
@@ -745,7 +754,7 @@ def displayWeather(window):
         windDirection = weatherData["curwinddir"]
         windGust = weatherData["curwindgust"]
         temperature = weatherData["curtemperature"]
-        if (useLocalStation == True and localWeatherData != False):
+        if (useLocalStation == True and localWeatherData != False and "curwindspeed" in localWeatherData):
             windSpeed = localWeatherData["curwindspeed"]
             windDirection = localWeatherData["curwinddir"]
             windGust = localWeatherData["curwindgust"]
