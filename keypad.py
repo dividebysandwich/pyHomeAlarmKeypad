@@ -752,15 +752,15 @@ def displayWeather(window):
             if (mapFrame > 20):
                 mapFrame = 0
         else:
-#            drawWeatherDiagram(window, "Wind km/h", weatherData["windspeeds"], weatherData["windgusts"], "white", "red", x, y)
+            drawWeatherDiagram(window, "Wind km/h", weatherData["windspeeds"], weatherData["windgusts"], "white", "red", x, y)
             y += 140
             drawWeatherDiagram(window, "Temperatur °C", weatherData["temperature"], False, "green", False, x, y)
             y += 140
-#            drawWeatherDiagram(window, "Luftfeuchte %", weatherData["humidity"], False, "blue", False, x, y)
+            drawWeatherDiagram(window, "Luftfeuchte %", weatherData["humidity"], False, "blue", False, x, y)
             y += 140
-#            drawWeatherDiagram(window, "Sonnenstrahlung W/m2", weatherData["solarradiation"], False, "yellow", False, x, y)
+            drawWeatherDiagram(window, "Sonnenstrahlung W/m2", weatherData["solarradiation"], False, "yellow", False, x, y)
             y += 140
-#            drawWeatherDiagram(window, "Regen mm/h", weatherData["rain"], False, "purple", False, x, y)
+            drawWeatherDiagram(window, "Regen mm/h", weatherData["rain"], False, "purple", False, x, y)
 
         windSpeed = weatherData["curwindspeed"]
         windDirection = weatherData["curwinddir"]
