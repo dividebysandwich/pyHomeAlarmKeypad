@@ -1,4 +1,4 @@
-import pygame, os, requests, time, string, glob, struct, urllib, cv2, numpy, logging, json, random, pytz, io
+import pygame, os, requests, time, string, glob, struct, urllib, cv2, numpy, logging, json, random, pytz, io, re
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pygame.locals import *
@@ -160,9 +160,12 @@ def getWeather():
     global weatherData, weatherServerAddress
     try:
         r = requests.get(weatherServerAddress, verify=False);
-        weatherData = json.loads(r.text)
+        p = re.compile('(?<!\\\\)\'')
+        data = p.sub('\"', r.text)
+        weatherData = json.loads(data)
     except Exception as err:
         print(f'Error in weather data: {err}')
+        print(data)
 
 def isfloat(num):
     try:
@@ -550,24 +553,33 @@ def drawWeatherDiagram(window, title, values, values2, color, color2, xpos, ypos
             if maxValueStart != 0.0:
                 maxValue = maxValueStart
 
+        maxSpan = maxValue-minValue
+        if (maxValue < minValue):
+            maxSpan = minValue - maxValue
+        print("min="+str(minValue)+" max="+str(maxValue)+" span="+str(maxSpan))
+
         #Draw gradient
         medianValue1 = 0
         for i, line in enumerate(values):
-            v = float(line)/maxValue
+            originalValue = float(line)
+            v = (originalValue-minValue) / maxSpan
             if (medianValue1 == 0):
                 medianValue1 = v
             average = (v+medianValue1) / 2
-            pygame.draw.line(window, getDrawGradientColor(color, 20+(i/5)), (xpos+i, ypos+(100-100*average)), (xpos+i, ypos + 100))
+            pygame.draw.line(window, getDrawGradientColor(color, 20+(i/5)), (xpos+i, ypos+(100-100*average)), (xpos+i, ypos + 100 - 100*(-minValue / maxSpan) ))
+            window.set_at((int(xpos+i), int(ypos + 100 - 100*(-minValue / maxSpan))), getDrawColor("white"))
             medianValue1 = average
 
         #Draw curve
         prevValue = False
         medianValue1 = 0
         for i, line in enumerate(values):
-            v = float(line)/maxValue
+            originalValue = float(line)
+            v = (originalValue-minValue) / maxSpan
             if (medianValue1 == 0):
                 medianValue1 = v
             average = (v+medianValue1) / 2
+            print ("ov = " + str(originalValue) + " av="+str(average))
             if prevValue != False:
                 pygame.draw.line(window, getDrawColor(color), (xpos+i, ypos+(100-100*average)), (xpos+i-1, ypos + (100-100*prevValue)))
             prevValue = average
@@ -740,15 +752,15 @@ def displayWeather(window):
             if (mapFrame > 20):
                 mapFrame = 0
         else:
-            drawWeatherDiagram(window, "Wind km/h", weatherData["windspeeds"], weatherData["windgusts"], "white", "red", x, y)
+#            drawWeatherDiagram(window, "Wind km/h", weatherData["windspeeds"], weatherData["windgusts"], "white", "red", x, y)
             y += 140
             drawWeatherDiagram(window, "Temperatur °C", weatherData["temperature"], False, "green", False, x, y)
             y += 140
-            drawWeatherDiagram(window, "Luftfeuchte %", weatherData["humidity"], False, "blue", False, x, y)
+#            drawWeatherDiagram(window, "Luftfeuchte %", weatherData["humidity"], False, "blue", False, x, y)
             y += 140
-            drawWeatherDiagram(window, "Sonnenstrahlung W/m2", weatherData["solarradiation"], False, "yellow", False, x, y)
+#            drawWeatherDiagram(window, "Sonnenstrahlung W/m2", weatherData["solarradiation"], False, "yellow", False, x, y)
             y += 140
-            drawWeatherDiagram(window, "Regen mm/h", weatherData["rain"], False, "purple", False, x, y)
+#            drawWeatherDiagram(window, "Regen mm/h", weatherData["rain"], False, "purple", False, x, y)
 
         windSpeed = weatherData["curwindspeed"]
         windDirection = weatherData["curwinddir"]
