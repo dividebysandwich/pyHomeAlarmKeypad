@@ -159,7 +159,7 @@ def getHistograms():
 def getWeather():
     global weatherData, weatherServerAddress
     try:
-        r = requests.get(weatherServerAddress);
+        r = requests.get(weatherServerAddress, verify=False);
         weatherData = json.loads(r.text)
     except Exception as err:
         print(f'Error in weather data: {err}')
